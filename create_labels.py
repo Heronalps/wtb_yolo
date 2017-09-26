@@ -1,6 +1,6 @@
-from wand.image import Image
-from wand.color import Color
 import sys, os
+from PIL import Image
+import urllib, cStringIO
 
 
 def download_and_subtract(image_link):
@@ -8,11 +8,21 @@ def download_and_subtract(image_link):
     :param image_link: Link to image with white background
     :return: image data with subtracted background)
     """
-    with Image(filename=image_link) as img:
-        with Color('#ffffff') as white:
-            twenty_percent = int(65535 * 0.2)  # Note: percent must be calculated from Quantum
-            img.transparent_color(white, alpha=0.0, fuzz=twenty_percent)
-        return img
+    print image_link
+    file = cStringIO.StringIO(urllib.urlopen(image_link).read())
+    img = Image.open(file)
+    img = img.convert("RGBA")
+    datas = img.getdata()
+
+    newData = []
+    for item in datas:
+        if item[0] == 255 and item[1] == 255 and item[2] == 255:
+            newData.append((255, 255, 255, 0))
+        else:
+            newData.append(item)
+
+    img.putdata(newData)
+    return img
 
 def parse_txt(txt_input):
     """
@@ -23,7 +33,7 @@ def parse_txt(txt_input):
     f = open(txt_input, 'r')
     content = []
     for line in f:
-        content.append(download_and_subtract(line))
+        content.append(download_and_subtract(line[:-1]))
     return content
 
 
@@ -35,5 +45,5 @@ if __name__ == '__main__':
     txt_content = parse_txt(txt_file)
     count = 1
     for img_data in txt_content:
-        img_data.save(filename="{}/{}{}.png".format(out_path, out_path, count))
+        img_data.save("{}/{}{}.png".format(out_path, out_path, count), "PNG")
         count += 1
