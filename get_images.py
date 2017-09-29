@@ -1,7 +1,7 @@
 import sys, os
 from PIL import Image
 import urllib, cStringIO
-
+from toolkit import make_bg_transparent
 
 def download_and_subtract(image_link):
     """
@@ -11,18 +11,7 @@ def download_and_subtract(image_link):
     print image_link
     file = cStringIO.StringIO(urllib.urlopen(image_link).read())
     img = Image.open(file)
-    img = img.convert("RGBA")
-    datas = img.getdata()
-
-    newData = []
-    for item in datas:
-        if item[0] == 255 and item[1] == 255 and item[2] == 255:
-            newData.append((255, 255, 255, 0))
-        else:
-            newData.append(item)
-
-    img.putdata(newData)
-    return img
+    return make_bg_transparent(img)
 
 def parse_txt(txt_input):
     """
