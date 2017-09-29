@@ -1,4 +1,4 @@
-import os
+import os, sys
 from toolkit import *
 
 classes = ["bear", "deer", "coyote"]
@@ -142,4 +142,11 @@ def create_montague_dir(background_dir, foreground_dir):
                 size = random.randint(7, 9)  # scaling factor foreground size
                 create_montague(background_copy, foreground_flipped, exif, img_location_flipped, size, out_dir)
 
-create_montague_dir("background", "bear")
+
+if __name__ == '__main__':
+    bg_dir = sys.argv[1]
+    fg_dir = sys.argv[2]
+    #TODO: add command line instructions for these so it doesnt crash with weird inputs
+    create_montague_dir(bg_dir, fg_dir)
+    print "Success! The synthetic dataset has been created under out/"
+    sys.exit(0)
