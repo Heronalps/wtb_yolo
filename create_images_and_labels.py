@@ -97,7 +97,7 @@ def generate_locations(background_size):
 
     random.shuffle(locations_list)
 
-    return locations_list[:10]
+    return locations_list[:5]
 
 def get_resize_factor(foreground_size):
     """
