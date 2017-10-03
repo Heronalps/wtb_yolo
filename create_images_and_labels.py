@@ -26,7 +26,7 @@ def generate_label(bg_size, obj_class, box):
 
     return strToWrite
 
-def get_bbox(location, size):
+def get_bbox(location, size_fg, size_bg):
     """
     :param location: (x,y) tuple containing the location of the top-left corner of the foreground
     :param size: tuple (w,h) containing size of the foreground
@@ -34,9 +34,17 @@ def get_bbox(location, size):
     """
     left = location[0] # left = x-coord
     top = location[1] # top = y-coord
-    bottom = top + size[1] # bottom = top - height
-    right = left + size[0] # right = left + width
+    bottom = top + size_fg[1] # bottom = top - height
+    right = left + size_fg[0] # right = left + width
 
+    if right > size_bg[0]:
+        # if the right plane of the bounding box is out of bounds, make it within bounds
+        right = size_bg[0]
+
+    if bottom > size_bg[1]:
+        # if the bottom plane of the bounding box is out of bounds, make it within bounds
+        bottom = size_bg[1]
+    print "left: {} top: {} right: {} bottom: {}".format(left, top, right, bottom)
     return left, top, right, bottom
 
 def create_montague(background_data, foreground_data, exif, location, resize_factor=10, out_dir="out"):
@@ -63,7 +71,7 @@ def create_montague(background_data, foreground_data, exif, location, resize_fac
 
 
     modified_foreground = modify_foreground(foreground_data, exif ,(w,h))
-    left, top, right, bottom = get_bbox(location, (w,h))
+    left, top, right, bottom = get_bbox(location, (w,h), (background_data.width, background_data.height))
     print left, top, right, bottom
     background_data.paste(modified_foreground, location, modified_foreground)
     generated_name = out_dir + '/' + id_generator()
