@@ -12,6 +12,7 @@ def verify(data_dir):
         filename_jpg = filename + '.jpg'
         filename_txt = filename + '.txt'
         if filename_jpg not in dir_files or filename_txt not in dir_files:
+            print file
             os.remove(data_dir+'/'+file)
 
 def convert_bbox(yolo_bbox):
