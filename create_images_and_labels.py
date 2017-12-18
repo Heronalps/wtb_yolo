@@ -47,7 +47,7 @@ def get_bbox(location, size_fg, size_bg):
     print "left: {} top: {} right: {} bottom: {}".format(left, top, right, bottom)
     return left, top, right, bottom
 
-def create_montague(background_data, foreground_data, exif, location, resize_factor=10, out_dir="out"):
+def create_montague(background_data, foreground_data, exif, location, (w,h), out_dir="out"):
     """
     creates a synthetic image of an animal in a empty background along with a bounding box
 
@@ -64,11 +64,6 @@ def create_montague(background_data, foreground_data, exif, location, resize_fac
         os.mkdir(out_dir)
 
     category = os.path.basename(out_dir) # the name of the output folder should be the category name
-
-    h, w = foreground_data.shape[:2]
-    w /= resize_factor
-    h /= resize_factor
-
 
     modified_foreground = modify_foreground(foreground_data, exif ,(w,h))
     left, top, right, bottom = get_bbox(location, (w,h), (background_data.width, background_data.height))
@@ -97,28 +92,14 @@ def generate_locations(background_size):
     bg_h = background_size[1]
     locations_list = []
     for x in range(1, bg_w, (bg_w / 10)):
-        bg_middle1 = bg_h - (bg_h / 4)
         bg_middle2 = bg_h - (bg_h / 3)
         bg_middle3 = bg_h - (bg_h / 2)
-        locations = [(x, bg_middle1), (x,bg_middle2), (x,bg_middle3)]
+        locations = [(x,bg_middle2), (x,bg_middle3)]
         locations_list += locations
 
     random.shuffle(locations_list)
 
     return locations_list[:5]
-
-def get_resize_factor(foreground_size):
-    """
-    :param foreground_size: foreground image size tuple (w, h)
-    :return: optimal scaling factor for given foreground
-    """
-    #TODO: finish this
-    dim = foreground_size[0]
-    count = 0
-    while dim > 500:
-        count +=1
-        dim *= 2/3.0
-    print dim, count
 
 
 def create_montague_dir(background_dir, foreground_dir):
@@ -141,15 +122,43 @@ def create_montague_dir(background_dir, foreground_dir):
             foreground_flipped = cv2.flip(foreground, 1)
             locations = generate_locations((background.width, background.height))
             locations_flipped = generate_locations((background.width, background.height))
+            bg_w, bg_h = background.size
+            fg_h, fg_w, _ = foreground.shape
             for img_location in locations:
                 background_copy = background.copy()
-                size = random.randint(7, 9) #scaling factor foreground size
-                create_montague(background_copy, foreground, exif, img_location, size, out_dir)
+                (w,h) = get_opt_wh((bg_w, bg_h), (fg_w, fg_h))
+                create_montague(background_copy, foreground, exif, img_location, (w,h), out_dir)
             for img_location_flipped in locations_flipped:
                 background_copy = background.copy()
-                size = random.randint(7, 9)  # scaling factor foreground size
-                create_montague(background_copy, foreground_flipped, exif, img_location_flipped, size, out_dir)
+                (w,h) = get_opt_wh((bg_w, bg_h), (fg_w, fg_h))
+                create_montague(background_copy, foreground_flipped, exif, img_location_flipped, (w,h), out_dir)
 
+def get_opt_wh(bg_wh, fg_wh):
+    """Retrieves "optimal" width and height for foreground
+    Optimal w, h -> a foreground (w,h) which is <= 2/3(w,h) of background"""
+    (fg_w, fg_h) = fg_wh
+    (bg_w, bg_h) = bg_wh
+
+    if fg_w <= .5* bg_w or fg_h <= .5* bg_h:
+        #if the foreground's width and height is less than half the foreground's
+        #width and height, then we cannot resize, since making it smaller is no use
+        return bg_wh
+
+    #else (w,h) must be at least bigger than 1/2(w,h)
+
+    ratios = [5/6.0, 4/5.0, 3/4.0, 2/3.0, 1/2.0, 1/3.0, 1/4.0, 1/5.0, 1/6.0, 1/7.0]
+    if fg_w >= bg_w or fg_h >= bg_h:
+        bg = bg_w * bg_h
+        fg = fg_w * fg_h
+        for r in ratios:
+            #choose the first ratio which yields a (w,h) combo of <= 2/3 background (w,h)
+            if fg*r <= (3/4.0) * bg:
+                print ratios.index(r), (int(round(fg_w * r)), int(round(fg_h * r)))
+                return (int(round(fg_w*r)), int(round(fg_h*r)))
+
+# get_opt_wh((1920, 1080), (3614, 2485))
+#
+# exit(1)
 
 if __name__ == '__main__':
     bg_dir = sys.argv[1]
