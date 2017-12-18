@@ -91,7 +91,7 @@ def generate_locations(background_size):
     bg_w = background_size[0]
     bg_h = background_size[1]
     locations_list = []
-    for x in range(1, bg_w, (bg_w / 10)):
+    for x in range(1, bg_w - (bg_w / 10), (bg_w / 10)):
         bg_middle2 = bg_h - (bg_h / 3)
         bg_middle3 = bg_h - (bg_h / 2)
         locations = [(x,bg_middle2), (x,bg_middle3)]
