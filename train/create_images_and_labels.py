@@ -3,29 +3,6 @@ from toolkit import *
 
 classes = ["bear", "deer", "coyote"]
 
-def generate_label(bg_size, obj_class, box):
-    """
-    :param bg_size: size tuple of the foreground (w,h)
-    :param obj_class: 0-3 object class, index in header
-    :param box: list -> [left, right, bottom, top]
-    :return: string to write for label in YOLO v2 format:
-    [category number] [object center in X] [object center in Y] [object width in X] [object width in Y]
-    """
-    dw = 1./bg_size[0]
-    dh = 1./bg_size[1]
-    x = (box[0] + box[1])/2.0
-    y = (box[2] + box[3])/2.0
-    w = box[1] - box[0]
-    h = box[3] - box[2]
-    x = x*dw
-    w = w*dw
-    y = y*dh
-    h = h*dh
-
-    strToWrite = "{} {} {} {} {}".format(obj_class, x, y, w, h)
-
-    return strToWrite
-
 def get_bbox(location, size_fg, size_bg):
     """
     :param location: (x,y) tuple containing the location of the top-left corner of the foreground
@@ -51,8 +28,8 @@ def create_montague(background_data, foreground_data, exif, location, (w,h), out
     """
     creates a synthetic image of an animal in a empty background along with a bounding box
 
-    :param background: backround image data - must be loaded though PIL
-    :param foreground: foreground image data - must be loaded through cv2
+    :param background_data: backround image data - must be loaded though PIL
+    :param foreground_data: foreground image data - must be loaded through cv2
     :param location: (x,y) coordinates of where the top-left corner of the image is placed
     :param resize_factor: do you want to resize the foreground? default is 10
     :param out_dir: where images and .txt containing bounding boxes are saved, default is "out/"
@@ -119,6 +96,7 @@ def create_montague_dir(background_dir, foreground_dir):
             fg_image = foreground_dir + '/' + fg_image
             print bg_image, fg_image
             foreground = cv2.imread(fg_image, -1)  # resizing is done through cv2
+            foreground = tighten_images(foreground)
             foreground_flipped = cv2.flip(foreground, 1)
             locations = generate_locations((background.width, background.height))
             locations_flipped = generate_locations((background.width, background.height))

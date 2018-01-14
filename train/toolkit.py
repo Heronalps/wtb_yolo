@@ -1,6 +1,6 @@
 import string, random
 from PIL import Image
-import cv2
+import cv2, imutils
 import numpy as np
 import exifread
 
@@ -95,3 +95,48 @@ def get_hours(exif_data):
     hour = int(time[0])
 
     return hour
+
+def tighten_images(img_data):
+    """crops images tightly around the biggest contour
+    img_data: image loaded through cv2"""
+    gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    thresh = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY_INV )[1]
+
+    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if imutils.is_cv2() else cnts[1]
+    max = (cv2.contourArea(cnts[0]), cnts[0])
+    for c in cnts:
+        curr = cv2.contourArea(c)
+        if curr > max[0 ]:
+            max = (curr, c)
+
+
+    [x, y, w, h] = cv2.boundingRect(max[1])
+    crop_img = img_data[y:y + h, x:x + w]
+
+    return crop_img
+
+def generate_label(bg_size, obj_class, box):
+    """
+    :param bg_size: size tuple of the foreground (w,h)
+    :param obj_class: 0-3 object class, index in header of create_images_and_labels.py
+    :param box: list -> [left, right, bottom, top]
+    :return: string to write for label in YOLO v2 format:
+    [category number] [object center in X] [object center in Y] [object width in X] [object width in Y]
+    """
+    dw = 1./bg_size[0]
+    dh = 1./bg_size[1]
+    x = (box[0] + box[1])/2.0
+    y = (box[2] + box[3])/2.0
+    w = box[1] - box[0]
+    h = box[3] - box[2]
+    x = x*dw
+    w = w*dw
+    y = y*dh
+    h = h*dh
+
+    strToWrite = "{} {} {} {} {}".format(obj_class, x, y, w, h)
+
+    return strToWrite

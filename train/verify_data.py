@@ -1,6 +1,6 @@
 import os, sys, cv2
 
-def verify(data_dir):
+def verify(data_dir, ext):
     """
     verifies that each .jpg has a corresponding .txt file
     :param data_dir: directory with all the jpg + txt files
@@ -9,7 +9,7 @@ def verify(data_dir):
     dir_files = os.listdir(data_dir)
     for file in dir_files:
         filename = file[:-4]
-        filename_jpg = filename + '.jpg'
+        filename_jpg = filename + ext
         filename_txt = filename + '.txt'
         if filename_jpg not in dir_files or filename_txt not in dir_files:
             print file
@@ -51,15 +51,17 @@ def check_bbox(img_data, yolo_bbox):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    data_dir = "out/bear"
+    data_dir = "bear_gt"
+    ext = ".png"
+    verify(data_dir, ext)
     for jpg in os.listdir(data_dir):
-        if ".jpg" in jpg:
+        if ext in jpg:
             fpath = data_dir + '/' + jpg
             img = cv2.imread(fpath)
             txt = fpath[:-4] + '.txt'
             bbox = open(txt, 'r')
-            bbox = bbox.readline()
-            bbox = bbox.split(" ")[1:]
-            bbox = map(float, bbox)
-            check_bbox(img, bbox)
-            print bbox, img.shape[:2]
+            for b in bbox.readlines():
+                bbox = b.split(" ")[1:]
+                bbox = map(float, bbox)
+                check_bbox(img, bbox)
+                print bbox, img.shape[:2]
